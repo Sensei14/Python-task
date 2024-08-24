@@ -42,3 +42,13 @@ def test_delete_user():
             users = UserModel.query.filter_by(id=28)
             print(users)
             assert count == 27
+
+
+def test_tree():
+    with app.test_client() as client:
+        response = client.get('/tree/1')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'tree' in data
+        assert data['tree']['id'] == 1
+        assert data['max_node_depth'] == 4
