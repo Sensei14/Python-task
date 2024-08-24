@@ -111,12 +111,12 @@ class Users(Resource):
         user = UserModel(first_name=args["first_name"], last_name=args['last_name'],
                          parent1_id=args['parent1_id'], parent2_id=args['parent2_id'])
 
-        if 'parent1_id' in args:
+        if 'parent1_id' in args and args['parent1_id'] != None:
             parent = UserModel.query.filter_by(id=args['parent1_id']).first()
             if not parent:
                 abort(400, message="Parent 1 not found")
 
-        if 'parent2_id' in args:
+        if 'parent2_id' in args and args['parent2_id'] != None:
             parent = UserModel.query.filter_by(id=args['parent2_id']).first()
             if not parent:
                 abort(400, message="Parent 2 not found")
