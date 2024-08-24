@@ -10,7 +10,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
 db = SQLAlchemy()
 db.init_app(app)
 app.config['SWAGGER'] = {
-    'title': 'Flasgger RESTful',
+    'title': 'Users genealogy tree',
 }
 swagger = Swagger(app)
 
@@ -85,6 +85,28 @@ class Users(Resource):
 
     @marshal_with(userFields)
     def post(self):
+        """
+        Create user
+        ---
+        tags: 
+            - Users
+        parameters:
+            - in: body
+              schema:
+                type: object
+                properties:
+                    first_name:
+                        type: string
+                        required: true
+                    last_name: 
+                        type: string
+                        required: true
+                    parent1_id:
+                        type: integer
+                    parent2_id:
+                        type: integer
+
+        """
         args = user_parser_create.parse_args()
         user = UserModel(first_name=args["first_name"], last_name=args['last_name'],
                          parent1_id=args['parent1_id'], parent2_id=args['parent2_id'])
@@ -147,15 +169,55 @@ class User(Resource):
         return user
 
     def delete(self, id):
+        """
+        Delete user
+        ---
+        tags:
+            - Users
+        parameters:
+          - in: path
+            name: id
+            required: true
+            description: User id
+            type: int
+        responses:
+            204:
+                schema:
+                    properties:
+                        message:
+                            type: string
+                            default: "User deleted"
+
+        """
         abort_if_user_does_not_exists(id)
 
         user = UserModel.query.filter_by(id=id).first()
         db.session.delete(user)
         db.session.commit()
-        return None, 204
+        return {"message": "User deleted"}, 204
 
     @marshal_with(userFields)
     def patch(self, id):
+        """
+        Update user
+        ---
+        tags: 
+            - Users
+        parameters:
+            - in: body
+              schema:
+                type: object
+                properties:
+                    first_name:
+                        type: string
+                    last_name: 
+                        type: string
+                    parent1_id:
+                        type: integer
+                    parent2_id:
+                        type: integer
+
+        """
         abort_if_user_does_not_exists(id)
 
         user = UserModel.query.filter_by(id=id).first()
@@ -181,21 +243,6 @@ class User(Resource):
 
         db.session.commit()
         return user
-
-
-class FamilyMember:
-    def __init__(self, id: int):
-        self.id = id
-        self.children = []
-
-    def add_child(self, child: 'FamilyMember'):
-        self.children.append(child)
-
-    def get(self):
-        return {
-            'id': self.id,
-            'children': self.children
-        }
 
 
 def get_parents(user_id):
@@ -321,6 +368,64 @@ def calculate_max_children_depth(tree_node):
 
 class Tree(Resource):
     def get(self, id):
+        """
+        Returns genealogy tree of user
+        ---
+        tags:
+          - Tree
+        parameters:
+          - in: path
+            name: id
+            required: true
+            description: User id
+            type: int
+        definitions:
+            Single_tree_node:
+                type: object
+                properties:
+                    id:
+                        type: integer
+                    first_name:
+                        type: string
+                    last_name:
+                        type: string
+                    parent1_id:
+                        type: integer
+                    parent2_id:
+                        type: integer
+        responses:
+          200:
+            description: Genealogy tree of user
+            schema:
+              id: Tree_node
+              properties:
+                id:
+                  type: integer
+                first_name:
+                    type: string
+                last_name:
+                    type: string
+                parent1_id:
+                  type: integer
+                parent2_id:
+                  type: integer
+                children:
+                    type: array
+                    items:
+                        type: object
+                        $ref: '#/definitions/Single_tree_node'
+                parents:
+                    type: array
+                    items:
+                        type: object
+                        $ref: '#/definitions/Single_tree_node'
+                max_children_depth:
+                    type: integer
+                max_parents_depth:
+                    type: integer
+                max_node_depth:
+                    type: integer
+        """
         abort_if_user_does_not_exists(id)
         user = UserModel.query.filter_by(id=id).first()
 
